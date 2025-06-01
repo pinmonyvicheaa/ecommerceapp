@@ -46,10 +46,10 @@ class ProductDetailScreen extends StatelessWidget {
                   const SizedBox(height: 30),
                   ElevatedButton(
                     onPressed: addToCart,
-                    child: const Text('Add to Cart'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
                     ),
+                    child: const Text('Add to Cart'),
                   )
                 ],
               ),

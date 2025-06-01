@@ -59,6 +59,9 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/logo_foreground.png"
   min_sdk_android: 21 # android min sdk min:16, default 21
+  web:
+    generate: true
+    image_path: "assets/logo.png"
 
 flutter:
 
