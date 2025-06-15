@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/cart_provider.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -11,6 +14,7 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final _formKey = GlobalKey<FormState>();
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -40,30 +44,114 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     setState(() => _isProcessing = true);
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    final totalAmount = cart.totalPrice + (cart.cartItems.length * 2.0);
+
+    try {
+      final clientId = 'ASLMGKdtntQ5vKqo-ehR6BwiW4xQWjAbhtrx5J5XBgE6vU7c4xyanrx8_pFkphseiA-rNJn3OUTduAap';
+      final secret = 'EKkLsLVvVN6yYh2NNHrm3wBLynlVUG28yDg7x0rpt1LE7S-SVkIuixXWIa-FuA8WknjMWtJtQPYehA3v';
+
+      final basicAuth = 'Basic ${base64Encode(utf8.encode('$clientId:$secret'))}';
+
+      final tokenResponse = await http.post(
+        Uri.parse('https://api-m.sandbox.paypal.com/v1/oauth2/token'),
+        headers: {
+          'Authorization': basicAuth,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {'grant_type': 'client_credentials'},
+      );
+
+      final accessToken = json.decode(tokenResponse.body)['access_token'];
+
+      final orderResponse = await http.post(
+        Uri.parse('https://api-m.sandbox.paypal.com/v2/checkout/orders'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: json.encode({
+          "intent": "CAPTURE",
+          "purchase_units": [
+            {
+              "amount": {
+                "currency_code": "USD",
+                "value": totalAmount.toStringAsFixed(2),
+              },
+            },
+          ],
+          "application_context": {
+            "return_url": "https://example.com/success",
+            "cancel_url": "https://example.com/cancel",
+          },
+        }),
+      );
+
+      final orderData = json.decode(orderResponse.body);
+      debugPrint('PayPal order response: $orderData');
+
+      if (orderResponse.statusCode == 201 && orderData['links'] != null) {
+        final approvalLink = orderData['links'].firstWhere(
+          (link) => link['rel'] == 'approve',
+          orElse: () => null,
+        );
+
+        if (approvalLink != null && approvalLink['href'] != null) {
+          final approvalUrl = approvalLink['href'];
+
+          if (await canLaunchUrl(Uri.parse(approvalUrl))) {
+            await launchUrl(
+              Uri.parse(approvalUrl),
+              mode: LaunchMode.externalApplication,
+            );
+          } else {
+            throw Exception('Could not launch PayPal approval URL');
+          }
+
+          cart.clearCart();
+        } else {
+          throw Exception('Approval URL not found in PayPal response.');
+        }
+      } else {
+        throw Exception('Failed to create PayPal order: ${orderResponse.body}');
+      }
+    } catch (e) {
+      debugPrint('PayPal Payment Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Payment failed: $e')),
+      );
+    } finally {
+      setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _processPaywayOrder(BuildContext context) async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isProcessing = true);
 
     final cart = Provider.of<CartProvider>(context, listen: false);
-    cart.clearCart();
+    final totalAmount = cart.totalPrice + (cart.cartItems.length * 2.0);
 
-    setState(() => _isProcessing = false);
+    try {
+      final paywayUrl = Uri.parse(
+          'https://sandbox.payway.com.kh/payment?amount=${totalAmount.toStringAsFixed(2)}&currency=USD');
 
-    // Show success dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Order Placed!'),
-        content: const Text('Your order has been placed successfully.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.popUntil(context, (route) => route.isFirst);
-            },
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+      if (await canLaunchUrl(paywayUrl)) {
+        await launchUrl(paywayUrl, mode: LaunchMode.externalApplication);
+      } else {
+        throw Exception('Could not launch PayWay sandbox URL');
+      }
+
+      cart.clearCart();
+    } catch (e) {
+      debugPrint('PayWay Payment Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PayWay payment failed: $e')),
+      );
+    } finally {
+      setState(() => _isProcessing = false);
+    }
   }
 
   @override
@@ -87,21 +175,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Full Name'),
-                validator: (value) =>
-                value?.isEmpty ?? true ? 'Please enter your name' : null,
+                validator: (value) => value!.isEmpty ? 'Enter your name' : null,
               ),
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
-                validator: (value) =>
-                value?.isEmpty ?? true ? 'Please enter your email' : null,
+                validator: (value) => value!.isEmpty ? 'Enter your email' : null,
                 keyboardType: TextInputType.emailAddress,
               ),
               TextFormField(
                 controller: _addressController,
                 decoration: const InputDecoration(labelText: 'Address'),
-                validator: (value) =>
-                value?.isEmpty ?? true ? 'Please enter your address' : null,
+                validator: (value) => value!.isEmpty ? 'Enter your address' : null,
               ),
               Row(
                 children: [
@@ -109,8 +194,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     child: TextFormField(
                       controller: _cityController,
                       decoration: const InputDecoration(labelText: 'City'),
-                      validator: (value) =>
-                      value?.isEmpty ?? true ? 'Please enter your city' : null,
+                      validator: (value) => value!.isEmpty ? 'Enter city' : null,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -118,8 +202,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     child: TextFormField(
                       controller: _zipController,
                       decoration: const InputDecoration(labelText: 'ZIP Code'),
-                      validator: (value) =>
-                      value?.isEmpty ?? true ? 'Please enter your ZIP code' : null,
+                      validator: (value) => value!.isEmpty ? 'Enter ZIP' : null,
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -133,7 +216,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 controller: _cardNumberController,
                 decoration: const InputDecoration(labelText: 'Card Number'),
                 validator: (value) =>
-                value?.isEmpty ?? true ? 'Please enter card number' : null,
+                    value!.isEmpty ? 'Enter card number' : null,
                 keyboardType: TextInputType.number,
               ),
               Row(
@@ -141,9 +224,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _expiryController,
-                      decoration: const InputDecoration(labelText: 'Expiry Date (MM/YY)'),
+                      decoration: const InputDecoration(labelText: 'Expiry (MM/YY)'),
                       validator: (value) =>
-                      value?.isEmpty ?? true ? 'Please enter expiry date' : null,
+                          value!.isEmpty ? 'Enter expiry date' : null,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -152,7 +235,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       controller: _cvvController,
                       decoration: const InputDecoration(labelText: 'CVV'),
                       validator: (value) =>
-                      value?.isEmpty ?? true ? 'Please enter CVV' : null,
+                          value!.isEmpty ? 'Enter CVV' : null,
                       keyboardType: TextInputType.number,
                       obscureText: true,
                     ),
@@ -162,7 +245,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const SizedBox(height: 24),
               const Text('Order Summary',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -176,7 +258,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       height: 50,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.broken_image),
+                          const Icon(Icons.broken_image),
                     ),
                     title: Text(item.product.name),
                     subtitle: Text('Qty: ${item.quantity}'),
@@ -187,7 +269,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const Divider(),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -197,7 +279,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -207,7 +289,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -219,6 +301,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+
+              // PayPal Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -228,7 +312,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   child: _isProcessing
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Pay with PayWay'),
+                      : const Text('Pay with PayPal'),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // PayWay Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed:
+                      _isProcessing ? null : () => _processPaywayOrder(context),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.orange,
+                  ),
+                  child: _isProcessing
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Pay with PayWay Sandbox'),
                 ),
               ),
             ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/cart_provider.dart';
 import 'screens/home_screen.dart';
+import 'screens/profile_screen.dart';  // Add this import
 
 void main() {
   runApp(
@@ -24,6 +25,9 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Poppins',
       ),
       home: const HomeScreen(),
+      routes: {
+        '/profile': (context) => const ProfileScreen(),  // Add this route
+      },
     );
   }
 }

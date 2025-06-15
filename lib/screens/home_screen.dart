@@ -8,6 +8,7 @@ import '../widgets/product_card.dart';
 import '../widgets/category_button.dart';
 import 'product_detail_screen.dart';
 import 'cart_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -56,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {});
         },
         child: CategoryButton(
-          title, // ✅ Pass title as positional argument
+          title,
           isSelected: isSelected,
         ),
       ),
@@ -85,23 +86,24 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
+          // Simplified cart icon without badge
           Consumer<CartProvider>(
             builder: (context, cart, child) {
-              return Badge(
-                label: Text(cart.itemCount.toString()),
-                child: IconButton(
-                  icon: const Icon(Icons.shopping_cart, color: Colors.black),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const CartScreen()),
-                    );
-                  },
-                ),
+              return IconButton(
+                icon: const Icon(Icons.shopping_cart, color: Colors.black),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CartScreen()),
+                  );
+                },
               );
             },
           ),
-          IconButton(icon: const Icon(Icons.notifications_none, color: Colors.black), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.notifications_none, color: Colors.black), 
+            onPressed: () {},
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -129,7 +131,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('New Offers', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  TextButton(onPressed: () {}, child: const Text('See All', style: TextStyle(color: Colors.blue))),
+                  TextButton(
+                    onPressed: () {}, 
+                    child: const Text('See All', style: TextStyle(color: Colors.blue)),
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -143,7 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Friday Sale UP TO 80% OFF', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Text('Friday Sale UP TO 80% OFF', 
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const Text('FOR DYNAMICS', style: TextStyle(fontSize: 14)),
                     const SizedBox(height: 10),
                     Align(
@@ -165,7 +171,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('New Pillows', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  TextButton(onPressed: () {}, child: const Text('See All', style: TextStyle(color: Colors.blue))),
+                  TextButton(
+                    onPressed: () {}, 
+                    child: const Text('See All', style: TextStyle(color: Colors.blue)),
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -184,24 +193,24 @@ class _HomeScreenState extends State<HomeScreen> {
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                children: _products.map((product) {
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => ProductDetailScreen(product: product)),
-                      );
-                    },
-                    child: ProductCard(product: product),
-                  );
-                }).toList(),
-              ),
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.7,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      children: _products.map((product) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => ProductDetailScreen(product: product)),
+                            );
+                          },
+                          child: ProductCard(product: product),
+                        );
+                      }).toList(),
+                    ),
             ],
           ),
         ),
@@ -213,6 +222,11 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CartScreen()),
+            );
+          } else if (index == 4) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
             );
           } else {
             setState(() => _currentIndex = index);
