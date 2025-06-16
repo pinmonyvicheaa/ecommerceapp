@@ -1,6 +1,6 @@
-# ecommerceapp-api
+# ecommerceapp-flutter-api
 
-ecommerceapp with Laravel API.
+Flutter ecommerceapp with Laravel API.
 
 ## Getting Started
 
