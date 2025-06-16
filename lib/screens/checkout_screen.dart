@@ -48,8 +48,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final totalAmount = cart.totalPrice + (cart.cartItems.length * 2.0);
 
     try {
-      final clientId = 'ASLMGKdtntQ5vKqo-ehR6BwiW4xQWjAbhtrx5J5XBgE6vU7c4xyanrx8_pFkphseiA-rNJn3OUTduAap';
-      final secret = 'EKkLsLVvVN6yYh2NNHrm3wBLynlVUG28yDg7x0rpt1LE7S-SVkIuixXWIa-FuA8WknjMWtJtQPYehA3v';
+      final clientId = 'YOUR_PAYPAL_CLIENT_ID';
+      final secret = 'YOUR_PAYPAL_SECRET';
 
       final basicAuth = 'Basic ${base64Encode(utf8.encode('$clientId:$secret'))}';
 
