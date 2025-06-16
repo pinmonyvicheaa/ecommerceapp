@@ -1,4 +1,4 @@
-# ecommerceapp
+# ecommerceapp-api
 
 ecommerceapp with Laravel API.
 
