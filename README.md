@@ -1,6 +1,6 @@
 # ecommerceapp
 
-A new Flutter project.
+ecommerceapp with Laravel API.
 
 ## Getting Started
 
@@ -14,3 +14,9 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+## How to run?
+1. Go to Terminal type "flutter pub get"
+2. Don't forget to edit the API with the url: http:// (example: http://55.155.175.111)
+3. Select which device you are using
+4. Run
