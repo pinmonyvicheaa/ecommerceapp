@@ -18,6 +18,6 @@ samples, guidance on mobile development, and a full API reference.
 ## How to run?
 1. Go to Terminal type "flutter pub get"
 2. Install this ecommerce-laravel-api: https://github.com/pinmonyvicheaa/ecommerce-laravel-api (README)
-3. Don't forget to edit the API with the url: http:// (example: http://55.155.175.111)
+3. Don't forget to edit the API with the url: http:// (in lib/screens/home_screen.dart Example http://18.136.203.40/api/products)
 4. Select which device you are using
 5. Run
